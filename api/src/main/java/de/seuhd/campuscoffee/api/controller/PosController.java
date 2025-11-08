@@ -4,6 +4,7 @@ import de.seuhd.campuscoffee.api.dtos.PosDto;
 import de.seuhd.campuscoffee.api.mapper.PosDtoMapper;
 import de.seuhd.campuscoffee.domain.ports.PosService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for handling POS-related API requests.
@@ -43,6 +45,36 @@ public class PosController {
     public ResponseEntity<PosDto> create(
             @RequestBody PosDto posDto) {
         PosDto created = upsert(posDto);
+        return ResponseEntity
+                .created(getLocation(created.id()))
+                .body(created);
+    }
+
+    @PostMapping(value = "/import/osm", consumes = {MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_PLAIN_VALUE, MediaType.TEXT_XML_VALUE})
+    public ResponseEntity<PosDto> importFromXml(@RequestBody String osmXml) {
+        PosDto created = posDtoMapper.fromDomain(
+                posService.importFromOsmXml(osmXml)
+        );
+        return ResponseEntity
+                .created(getLocation(created.id()))
+                .body(created);
+    }
+
+    @PostMapping(value = "/import/osm", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PosDto> importFromJson(@RequestBody Map<String, Object> body) {
+        Object nodeIdObj = body.get("nodeId");
+        if (nodeIdObj == null) {
+            throw new IllegalArgumentException("Missing 'nodeId' in request body");
+        }
+        Long nodeId;
+        if (nodeIdObj instanceof Number) {
+            nodeId = ((Number) nodeIdObj).longValue();
+        } else {
+            nodeId = Long.parseLong(nodeIdObj.toString());
+        }
+        PosDto created = posDtoMapper.fromDomain(
+                posService.importFromOsmNode(nodeId)
+        );
         return ResponseEntity
                 .created(getLocation(created.id()))
                 .body(created);

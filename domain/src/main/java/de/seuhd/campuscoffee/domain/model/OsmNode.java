@@ -3,14 +3,26 @@ package de.seuhd.campuscoffee.domain.model;
 import lombok.Builder;
 import org.jspecify.annotations.NonNull;
 
+import java.util.Map;
+
 /**
  * Represents an OpenStreetMap node with relevant Point of Sale information.
- * This is the domain model for OSM data before it is converted to a POS object.
- *
- * @param nodeId The OpenStreetMap node ID.
+ * Extended to carry parsed tag and coordinate information needed to create a POS.
  */
 @Builder
-public record OsmNode(@NonNull Long nodeId) {
-    // TODO: The OsmNode record currently only contains the node ID, but should be extended to include
-    //  all relevant fields for POS objects.
+public record OsmNode(
+        @NonNull Long nodeId,
+        String name,
+        String description,
+        Double lat,
+        Double lon,
+        Map<String, String> tags,
+        String street,
+        String houseNumber,
+        String city,
+        Integer postalCode,
+        String country,
+        String phone,
+        String website
+) {
 }

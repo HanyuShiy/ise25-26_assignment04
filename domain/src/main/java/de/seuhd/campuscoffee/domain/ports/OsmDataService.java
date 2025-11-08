@@ -18,4 +18,14 @@ public interface OsmDataService {
      * @throws OsmNodeNotFoundException if the node doesn't exist or can't be fetched
      */
     @NonNull OsmNode fetchNode(@NonNull Long nodeId) throws OsmNodeNotFoundException;
+
+    /**
+     * Parses raw OSM XML content and extracts the node with the given nodeId.
+     * If nodeId is null, the first node in the XML is returned.
+     *
+     * @param nodeId    the node id to extract from XML or null to pick first node
+     * @param osmXmlStr the raw OSM XML content
+     * @return the parsed OsmNode
+     */
+    @NonNull OsmNode parseNodeFromXml(Long nodeId, @NonNull String osmXmlStr) throws OsmNodeNotFoundException;
 }

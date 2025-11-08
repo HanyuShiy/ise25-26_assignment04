@@ -84,4 +84,13 @@ public interface PosService {
      * @throws DuplicatePosNameException if a POS with the same name already exists
      */
     @NonNull Pos importFromOsmNode(@NonNull Long nodeId) throws OsmNodeNotFoundException, OsmNodeMissingFieldsException, DuplicatePosNameException;
+
+    /**
+     * Imports a POS from a raw OSM XML string. If the XML contains multiple nodes, the first is used
+     * unless a nodeId is provided in the XML or separately.
+     *
+     * @param osmXml the raw OSM XML content
+     * @return the created or updated POS
+     */
+    @NonNull Pos importFromOsmXml(@NonNull String osmXml) throws OsmNodeNotFoundException, OsmNodeMissingFieldsException, DuplicatePosNameException;
 }

@@ -72,32 +72,66 @@ public class PosServiceImpl implements PosService {
         OsmNode osmNode = osmDataService.fetchNode(nodeId);
 
         // Convert OSM node to POS domain object and upsert it
-        // TODO: Implement the actual conversion (the response is currently hard-coded).
         Pos savedPos = upsert(convertOsmNodeToPos(osmNode));
         log.info("Successfully imported POS '{}' from OSM node {}", savedPos.name(), nodeId);
 
         return savedPos;
     }
 
+    @Override
+    public @NonNull Pos importFromOsmXml(@NonNull String osmXml) throws OsmNodeNotFoundException {
+        log.info("Importing POS from provided OSM XML...");
+        OsmNode osmNode = osmDataService.parseNodeFromXml(null, osmXml);
+        Pos saved = upsert(convertOsmNodeToPos(osmNode));
+        log.info("Successfully imported POS '{}' from OSM XML (node {})", saved.name(), osmNode.nodeId());
+        return saved;
+    }
+
     /**
      * Converts an OSM node to a POS domain object.
-     * Note: This is a stub implementation and should be replaced with real mapping logic.
      */
     private @NonNull Pos convertOsmNodeToPos(@NonNull OsmNode osmNode) {
-        if (osmNode.nodeId().equals(5589879349L)) {
-            return Pos.builder()
-                    .name("Rada Coffee & Rösterei")
-                    .description("Caffé und Rösterei")
-                    .type(PosType.CAFE)
-                    .campus(CampusType.ALTSTADT)
-                    .street("Untere Straße")
-                    .houseNumber("21")
-                    .postalCode(69117)
-                    .city("Heidelberg")
-                    .build();
-        } else {
+        // Validate required fields
+        if (osmNode.name() == null || osmNode.name().isEmpty()) {
             throw new OsmNodeMissingFieldsException(osmNode.nodeId());
         }
+
+        String name = osmNode.name();
+        String description = osmNode.description() != null ? osmNode.description() : "";
+
+        // Determine POS type
+        PosType type = PosType.CAFE; // default
+        if (osmNode.tags() != null) {
+            String amenity = osmNode.tags().get("amenity");
+            String cuisine = osmNode.tags().get("cuisine");
+            if (amenity != null && !amenity.isEmpty()) {
+                if (amenity.equalsIgnoreCase("cafe") || amenity.equalsIgnoreCase("restaurant")) {
+                    type = PosType.CAFE;
+                }
+            } else if (cuisine != null && cuisine.contains("coffee")) {
+                type = PosType.CAFE;
+            }
+        }
+
+        // Use address fields from osmNode where available; fall back to placeholders
+        String street = osmNode.street() != null ? osmNode.street() : "";
+        String houseNumber = osmNode.houseNumber() != null ? osmNode.houseNumber() : "";
+        Integer postalCode = osmNode.postalCode() != null ? osmNode.postalCode() : 0;
+        String city = osmNode.city() != null ? osmNode.city() : "";
+
+        // Default campus selection - heuristic: ALTSTADT for Heidelberg
+        CampusType campus = CampusType.ALTSTADT;
+
+        return Pos.builder()
+                .name(name)
+                .description(description)
+                .type(type)
+                .campus(campus)
+                .street(street)
+                .houseNumber(houseNumber)
+                .postalCode(postalCode)
+                .city(city)
+                .build();
     }
 
     /**
